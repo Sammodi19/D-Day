@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scratch Walking or Cycling</title>
+  <style>
+    :root {
+      --bg: #161a23;
+      --pastel-pink: #ffb6c1;
+      --pastel-blue: #add8e6;
+      --accent-pink: #ff8da1;
+      --accent-blue: #8dc4ff;
+      --card-shadow: 0 12px 32px rgba(16,20,40,0.18);
+      --radius: 16px;
+      --scratch-grey: #bdbdbd;
+      --text: #f5f7fb;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      font-family: Poppins, Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial;
+      color: var(--text);
+    }
+    .wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 36px;
+      box-sizing: border-box;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      width: 860px;
+      max-width: 95%;
+    }
+    .card {
+      position: relative;
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--card-shadow);
+      overflow: visible;
+      min-height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #23283b;
+      border: 1px solid #374056;
+    }
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 160px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      box-sizing: border-box;
+      user-select: none;
+      overflow: hidden;
+    }
+    .card.one .card-inner {
+      background: linear-gradient(135deg, var(--pastel-pink), #ffeef3 80%);
+      border: 1px solid rgba(255, 182, 193, 0.22);
+    }
+    .card.two .card-inner {
+      background: linear-gradient(135deg, var(--pastel-blue), #eaf7ff 80%);
+      border: 1px solid rgba(173,216,230,0.23);
+    }
+    .title {
+      position: absolute;
+      top: -24px;
+      left: 18px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+      background: rgba(35, 40, 59, 0.85);
+      padding: 6px 10px;
+      border-radius: 10px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 6px 18px rgba(12,12,30,0.09);
+    }
+    .prize {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text);
+      z-index: 2;
+      pointer-events: none;
+      text-align: center;
+    }
+    /* BOOST FIGURES VISIBILITY BELOW */
+    .inner-doodle {
+      position: absolute;
+      opacity: 0.97; /* make nearly opaque */
+      font-size: 110px; /* larger for visibility */
+      z-index: 1;
+      filter: drop-shadow(0 6px 2px rgba(20,20,40,0.33))
+              drop-shadow(0 1px 0 white);
+      /* Add subtle white outline by stacking/overlaying shadows */
+      pointer-events: none;
+      transition: filter 0.2s;
+    }
+    .i1 {
+      top: -6px;
+      left: -8px;
+      transform: rotate(-12deg);
+    }
+    .i2 {
+      bottom: -10px;
+      right: -12px;
+      transform: rotate(18deg);
+      opacity: 0.14; /* keep cloud subtle */
+      font-size: 88px;
+      filter: none;
+    }
+    .scratch-canvas {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: calc(100% - 24px);
+      height: calc(100% - 24px);
+      border-radius: 12px;
+      z-index: 10;
+      touch-action: none;
+    }
+    .reveal-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .reveal-card {
+      width: 440px;
+      max-width: 92%;
+      background: linear-gradient(180deg, #262d45, #21233a);
+      border-radius: 18px;
+      padding: 26px;
+      box-shadow: 0 18px 38px rgba(16,18,40,0.22);
+      text-align: center;
+      transform: translateY(12px) scale(0.98);
+      opacity: 0;
+      transition: all 420ms cubic-bezier(.2,.9,.2,1);
+      pointer-events: auto;
+    }
+    .reveal-card.show {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    .reveal-card h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      color: var(--text);
+    }
+    .reveal-card p {
+      margin: 0 0 14px;
+      color: #cfd8ef;
+    }
+    .reveal-badge {
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #313651, #444a6c);
+      box-shadow: 0 6px 16px rgba(30,30,80,0.10);
+      font-size: 15px;
+      color: #ffb6c1;
+    }
+    @media (max-width: 720px) {
+      .board {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .title {
+        left: 12px;
+        top: -22px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="board" id="board">
+    <!-- Card A -->
+    <div class="card one" data-index="0">
+      <div class="title">Option A</div>
+      <div class="card-inner">
+        <!-- Walking figure with strong shadow and nearly opaque -->
+        <div class="inner-doodle i1">🚶‍♂️</div>
+        <div class="inner-doodle i2">☁️</div>
+        <div class="prize" id="prize-0">Walking</div>
+        <canvas class="scratch-canvas" id="canvas-0"></canvas>
+      </div>
+    </div>
+    <!-- Card B -->
+    <div class="card two" data-index="1">
+      <div class="title">Option B</div>
+      <div class="card-inner">
+        <!-- Cycling figure with strong shadow and nearly opaque -->
+        <div class="inner-doodle i1">🚴‍♀️</div>
+        <div class="inner-doodle i2">☁️</div>
+        <div class="prize" id="prize-1">Cycling</div>
+        <canvas class="scratch-canvas" id="canvas-1"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="reveal-overlay" id="revealOverlay" aria-hidden="true" style="display:none">
+  <div class="reveal-card" id="revealCard" role="dialog" aria-modal="true">
+    <h2 id="revealTitle">You picked</h2>
+    <p id="revealText">Result</p>
+    <div class="reveal-badge" id="revealBadge"></div>
+  </div>
+</div>
+<script>
+const THRESHOLD_PERCENT = 40; // percent scratched required
+const RADIUS = 20; // brush radius in CSS pixels
+const cards = [
+  { id: 0, prizeText: 'Walking', badge: 'Walking' },
+  { id: 1, prizeText: 'Cycling', badge: 'Cycling' }
+];
+const canvases = [];
+const ctxs = [];
+const masks = [];
+const scratched = [false, false];
+
+function init() {
+  for (let i = 0; i < 2; i++) {
+    const c = document.getElementById(`canvas-${i}`);
+    canvases[i] = c;
+    ctxs[i] = c.getContext("2d");
+    const prizeEl = document.getElementById(`prize-${i}`);
+    if (prizeEl) prizeEl.textContent = cards[i].prizeText;
+  }
+  requestAnimationFrame(setupCanvases);
+}
+function setupCanvases() {
+  for (let i = 0; i < canvases.length; i++) {
+    const canvas = canvases[i];
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+
+    const off = document.createElement("canvas");
+    off.width = canvas.width;
+    off.height = canvas.height;
+    masks[i] = off;
+    const mctx = off.getContext("2d");
+
+    mctx.fillStyle = "#bdbdbd";
+    mctx.fillRect(0,0,off.width, off.height);
+
+    mctx.globalAlpha = 0.06;
+    for (let y = 0; y < off.height; y += 8)
+      mctx.fillRect(0, y, off.width, 4);
+    mctx.globalAlpha = 1;
+
+    mctx.save();
+    mctx.fillStyle = "#ffffff";
+    mctx.textAlign = "center";
+    mctx.textBaseline = "middle";
+    const desiredCssFontPx = Math.round(rect.height / 6);
+    const fontPx = Math.round(desiredCssFontPx * dpr);
+    mctx.font = `bold ${fontPx}px Poppins, Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial`;
+    mctx.shadowColor = "rgba(0,0,0,0.25)";
+    mctx.shadowBlur = Math.round(4 * dpr);
+    mctx.shadowOffsetY = Math.round(2 * dpr);
+    mctx.fillText("Scratch me if you dare!", off.width / 2, off.height / 2);
+    mctx.restore();
+
+    const vis = ctxs[i];
+    vis.setTransform(1,0,0,1,0,0);
+    vis.clearRect(0,0,canvas.width, canvas.height);
+    vis.drawImage(off, 0, 0);
+
+    bindCanvasEvents(canvas, i, dpr);
+  }
+}
+function getPointerPosFromEvent(evt, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  let clientX, clientY;
+  if (evt.touches) {
+    clientX = evt.touches[0].clientX;
+    clientY = evt.touches[0].clientY;
+  } else {
+    clientX = evt.clientX;
+    clientY = evt.clientY;
+  }
+  return { x: clientX - rect.left, y: clientY - rect.top };
+}
+function bindCanvasEvents(canvas, index, dpr) {
+  let drawing = false;
+  function drawAt(pos) {
+    const off = masks[index];
+    const mctx = off.getContext("2d");
+    const x = Math.round(pos.x * dpr);
+    const y = Math.round(pos.y * dpr);
+    const r = Math.round(RADIUS * dpr);
+
+    mctx.save();
+    mctx.globalCompositeOperation = "destination-out";
+    mctx.beginPath();
+    mctx.arc(x, y, r, 0, Math.PI * 2);
+    mctx.fill();
+    mctx.restore();
+
+    const vis = ctxs[index];
+    vis.clearRect(0,0,canvas.width, canvas.height);
+    vis.drawImage(off, 0, 0);
+  }
+  function onDown(e) {
+    e.preventDefault();
+    drawing = true;
+    const pos = getPointerPosFromEvent(e, canvas);
+    drawAt(pos);
+  }
+  function onMove(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    const pos = getPointerPosFromEvent(e, canvas);
+    drawAt(pos);
+  }
+  function onUp(e) {
+    if (!drawing) return;
+    drawing = false;
+    checkScratchPercent(index);
+  }
+  canvas.addEventListener("mousedown", onDown);
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
+
+  canvas.addEventListener("touchstart", onDown, { passive: false });
+  window.addEventListener("touchmove", onMove, { passive: false });
+  window.addEventListener("touchend", onUp);
+
+  canvas.addEventListener("contextmenu", (ev) => ev.preventDefault());
+}
+function checkScratchPercent(index) {
+  const off = masks[index];
+  const w = off.width, h = off.height;
+  const ctx = off.getContext("2d");
+  try {
+    const img = ctx.getImageData(0,0,w,h);
+    const totalPixels = w * h;
+    let clearCount = 0;
+    const step = 4 * 4;
+    for (let i = 3; i < img.data.length; i += step)
+      if (img.data[i] == 0) clearCount++;
+    const sampledTotal = Math.ceil(totalPixels / 4);
+    const percent = clearCount / sampledTotal * 100;
+    if (percent > THRESHOLD_PERCENT && !scratched[index]) {
+      scratched[index] = true;
+      onCardSelected(index);
+    }
+  } catch (err) {
+    console.warn("Error sampling scratch mask", err);
+    if (!scratched[index]) {
+      scratched[index] = true;
+      onCardSelected(index);
+    }
+  }
+}
+function onCardSelected(index) {
+  for (let i = 0; i < canvases.length; i++) {
+    const canvas = canvases[i];
+    if (!canvas) continue;
+    canvas.style.transition = "opacity 420ms ease, transform 420ms ease";
+    canvas.style.opacity = "0";
+    canvas.style.transform = "scale(0.98)";
+    canvas.style.pointerEvents = "none";
+  }
+  setTimeout(() => {
+    for (let i = 0; i < canvases.length; i++) {
+      const c = canvases[i];
+      if (c && c.parentNode) c.parentNode.removeChild(c);
+    }
+    showReveal(index);
+  }, 430);
+}
+function showReveal(index) {
+  const overlay = document.getElementById("revealOverlay");
+  const card = document.getElementById("revealCard");
+  const title = document.getElementById("revealTitle");
+  const text = document.getElementById("revealText");
+  const badge = document.getElementById("revealBadge");
+  const data = cards[index];
+  title.textContent = data.prizeText.includes("Walking") ? "Walking Selected" : "Cycling Selected";
+  text.textContent = data.prizeText;
+  badge.textContent = data.badge;
+  overlay.style.display = "flex";
+  setTimeout(() => card.classList.add("show"), 20);
+}
+window.scratch = { canvases, masks, cards, scratched };
+init();
+</script>
+</body>
+</html>
